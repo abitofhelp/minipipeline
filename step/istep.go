@@ -12,5 +12,9 @@ type IStep interface {
 	setChannelIn(ch chan interface{})
 	ChannelOut() interface{}
 	setChannelOut(ch chan interface{})
+	Counter() uint64
+	setCounter(counter uint64)
+	incrementCounter()
+	decrementCounter()
 	Execute(wg *sync.WaitGroup) error
 }

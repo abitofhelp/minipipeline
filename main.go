@@ -44,7 +44,7 @@ func main() {
 	// Wait for all goroutines to complete.
 	wg.Wait()
 
-	fmt.Println("\nTotal Found: %d", intakeStep.Counter)
+	fmt.Println("\nTotal Found: %d", intakeStep.Counter())
 	fmt.Printf("\nTotal Processed: %d", processed)
 
 }
