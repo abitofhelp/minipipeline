@@ -6,7 +6,5 @@ package step
 
 // Interface IStep defines the methods that all steps in a pipeline must implement.
 type IStep interface {
-	IReceive
-	ISend
 	Execute() error
 }

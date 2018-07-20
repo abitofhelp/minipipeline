@@ -6,6 +6,6 @@ package step
 
 // Interface ILast defines the methods that the last step in a pipeline must implement.
 type ILast interface {
+	IStep
 	IReceive
-	Execute() error
 }

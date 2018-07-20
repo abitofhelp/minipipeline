@@ -6,7 +6,7 @@ package step
 
 // Interface IFirst defines the methods that the first step in a pipeline must implement.
 type IFirst interface {
+	IStep
 	IReceive
 	ISend
-	Execute() error
 }
