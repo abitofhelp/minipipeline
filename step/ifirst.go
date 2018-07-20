@@ -4,8 +4,8 @@
 // Package step provides the building blocks for making a pipeline.
 package step
 
-// Interface IStep defines the methods that all steps in a pipeline must implement.
-type IStep interface {
+// Interface IFirst defines the methods that the first step in a pipeline must implement.
+type IFirst interface {
 	IReceive
 	ISend
 	Execute() error

@@ -6,8 +6,8 @@ package main
 /*
 import (
 	"errors"
-	"github.com/abitofhelp/MiniPipeline/step/intake"
-	. "github.com/abitofhelp/MiniPipeline/step"
+	"github.com/abitofhelp/minipipeline/step/intake"
+	. "github.com/abitofhelp/minipipeline/step"
 )
 
 // Default step implementation to use.

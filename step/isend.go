@@ -4,9 +4,9 @@
 // Package step provides the building blocks for making a pipeline.
 package step
 
-// Interface IStep defines the methods that all steps in a pipeline must implement.
-type IStep interface {
-	IReceive
-	ISend
-	Execute() error
+// Interface ISend defines the methods that must be implemented for sending through a channel
+// to the next step in a pipeline.
+type ISend interface {
+	SendCounter() uint64
+	Send() error
 }
