@@ -1,22 +1,24 @@
 // Copyright (c) 2018 A Bit of Help, Inc. - All Rights Reserved, Worldwide.
 // Use of this source code is governed by a MIT license that can be found in the LICENSE file.
 
-// Package intake implements a pipeline step in which items in an array are ingested and
-// passed along to the next step in the pipeline.
+// Package intake implements a pipeline stage in which items in an array are ingested and
+// passed along to the next stage in the pipeline.
 package intake
 
 import (
 	"fmt"
-	"github.com/abitofhelp/minipipeline/step"
 	"github.com/karrick/godirwalk"
 	"os"
-	. "path/filepath"
+	//. "path/filepath"
+	"github.com/abitofhelp/minipipeline/message"
+	msg "github.com/abitofhelp/minipipeline/message"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const (
-	// The name of this step.
+	// The name of this stage.
 	KStepName = "Intake"
 
 	// The length of the send channel.
@@ -28,45 +30,51 @@ const (
 // which are passed along to the pipeline for
 // further processing.
 type Intake struct {
-	step.IFirst
-
-	// Field name is the name of the step.
+	// Field name is the name of the stage.
 	name string
 
-	// Field items is an array of items to process.
-	inputItems []string
+	// Field directories is an array of directory paths to process.
+	directories []string
 
-	// Field receiveCounter is the number of elements that will be
+	// Field message is the pipeline message for this stage.
+	message message.Intake
+
+	// Field receiveCounter is the number of messages that will be
 	// sent through the send channel.
 	receiveCounter uint64
 
-	// Field sendCounter is the number of elements that have been
+	// Field sendCounter is the number of messages that have been
 	// sent through send channel.
 	sendCounter uint64
 
-	// Field sendChannel contains the elements being passed along to
-	// the next step in the pipeline.
-	sendChannel chan<- string
+	// Field sendChannel contains the messages being passed along to
+	// the next stage in the pipeline.
+	sendChannel chan<- message.Intake
 }
 
-// Method Name returns the name of the step.
+// Method Name returns the name of the stage.
 func (i Intake) Name() string {
 	return i.name
 }
 
-// Method InputItems returns an array of items that will be processed by the pipeline.
-func (i Intake) InputItems() []string {
-	return i.inputItems
+// Method Directories() returns an array of directory paths that will be processed by the pipeline.
+func (i Intake) Directories() []string {
+	return i.directories
 }
 
-// Method ReceiveCounter returns the number of elements that have been
+// Method Message() returns a message that will be processed by the pipeline for this stage.
+func (i Intake) Message() message.Intake {
+	return i.message
+}
+
+// Method ReceiveCounter returns the number of messages that have been
 // processed as input, atomically.
 func (i Intake) ReceiveCounter() uint64 {
 	return atomic.LoadUint64(&i.receiveCounter)
 }
 
-// Method SendCounter returns the number of elements that have been
-// sent through the send channel to the next step in the pipeline, atomically.
+// Method SendCounter returns the number of messages that have been
+// sent through the send channel to the next stage in the pipeline, atomically.
 func (i Intake) SendCounter() uint64 {
 	return atomic.LoadUint64(&i.sendCounter)
 }
@@ -91,15 +99,25 @@ func (i *Intake) incReceiveCounter() {
 	atomic.AddUint64(&i.receiveCounter, 1)
 }
 
-// Method setChannelOut sets the output channel for the step.
-func (i *Intake) Send() error {
-	// ToDo
+// Method Send sets sends a message through the send channel.
+func (i *Intake) Send(payload string) error {
+	fmt.Printf("F: %s\n", payload)
+
+	// Ready to pass the intake message to the next stage in the pipeline.  Set its departure time.
+	i.message.SetPayload(payload)
+	i.message.SetDepartedUtc(time.Now().UTC())
+	i.sendChannel <- i.message
+	i.incSendCounter()
 	return nil
 }
 
 // Method Execute walks the source directory paths, and adds a file system path for each
 // regular file that is found to the output channel.
 func (i *Intake) Execute() error {
+
+	// Ready to process the input directories...  For this stage, this is when the message arrived.
+	i.message.SetArrivedUtc(time.Now().UTC())
+
 	return i.loadFilePathsToSendChannel()
 }
 
@@ -113,12 +131,12 @@ func (i *Intake) loadFilePathsToSendChannel() error {
 	// goroutines that were launched have completed.
 	var wg sync.WaitGroup
 
-	// Determine the source directory paths to process.
-	for _, directoryPath := range i.inputItems {
+	// Determine the messages to process.
+	for _, dir := range i.directories {
 
-		fmt.Printf("\nDirectoryPath: %s\n", directoryPath)
+		fmt.Printf("\\Directory: %s\n", dir)
 
-		godirwalk.Walk(directoryPath, &godirwalk.Options{
+		godirwalk.Walk(dir, &godirwalk.Options{
 
 			FollowSymbolicLinks: false,
 			Unsorted:            true,
@@ -135,11 +153,12 @@ func (i *Intake) loadFilePathsToSendChannel() error {
 					defer wg.Done()
 
 					if de.IsRegular() {
+
+						// Increment the received counter...  We are receiving a path to a file rather than a message.
 						i.incReceiveCounter()
-						fmt.Printf("F: %s\n", path)
-						// When the channel is full, we will block here...
-						i.sendChannel <- Join(path, de.Name())
-						i.incSendCounter()
+
+						// Send the item to the next stage in the pipeline...
+						i.Send(path)
 					}
 				}(path)
 
@@ -166,11 +185,19 @@ func (i *Intake) loadFilePathsToSendChannel() error {
 	return nil
 }
 
-// Function New creates a new instance of the Intake step.
-func New(directoryPaths []string, sendChannel chan<- string) *Intake {
+// ToDo: Virtual/abstract method...
+//func CreateMessage() error {}
+//Join(path, de.Name())
+//}
 
-	// Create the first step in the pipeline: IntakeStep.
-	intakeStep := &Intake{name: KStepName, inputItems: directoryPaths, receiveCounter: 0, sendCounter: 0, sendChannel: sendChannel}
+// Function New creates a new instance of the Intake stage.
+func New(directories []string, sendChannel chan<- msg.Intake) *Intake {
+
+	// Create the message for this stage in the pipeline...
+	message := message.NewIntake("")
+
+	// Create the first stage in the pipeline: IntakeStep.
+	intakeStep := &Intake{name: KStepName, directories: directories, message: *message, receiveCounter: 0, sendCounter: 0, sendChannel: sendChannel}
 
 	return intakeStep
 }

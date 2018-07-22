@@ -7,7 +7,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/abitofhelp/minipipeline/step/intake"
+	"github.com/abitofhelp/minipipeline/message"
+	"github.com/abitofhelp/minipipeline/stage/intake"
 	"sync"
 )
 
@@ -20,8 +21,8 @@ func main() {
 	// have completed.
 	var wg sync.WaitGroup
 
-	// Create the channel for sending to the next step.
-	intakeSendChannel := make(chan string, intake.KSendChannelSize)
+	// Create the channel for sending to the next stage.
+	intakeSendChannel := make(chan message.Intake, intake.KSendChannelSize)
 
 	// Increment the producer's WaitGroup counter for the goroutine
 	// launching the Consumer().
@@ -34,7 +35,9 @@ func main() {
 		Consumer(intakeSendChannel)
 	}()
 
-	intakeStep := intake.New([]string{"/tmp", "/home/mjgardner/Downloads"}, intakeSendChannel)
+	paths := []string{"/tmp", "/home/mjgardner/Downloads"}
+
+	intakeStep := intake.New(paths, intakeSendChannel)
 
 	// Increment the producer's WaitGroup counter for the goroutine
 	// launching the Producer().
@@ -70,7 +73,7 @@ func main() {
 // Parameter ch is a unidirectional channel from which directory paths are
 // retrieved.
 // It returns when all of the goroutines have completed processing the channel.
-func Consumer(ch <-chan string) {
+func Consumer(ch <-chan message.Intake) {
 	// Variable wg is the consumer's WaitGroup, which detects when all of the
 	// goroutines that were launched have completed.
 	var wg sync.WaitGroup
@@ -80,23 +83,23 @@ func Consumer(ch <-chan string) {
 	// which happens when all of the goroutines that were launched have completed.
 	defer wg.Wait()
 
-	for path := range ch {
+	for msg := range ch {
 		// Increment the consumer's WaitGroup counter for each goroutine that is launched.
 		wg.Add(1)
-		go func(path string) {
+		go func(path message.Intake) {
 			// Decrement the consumers's WaitGroup counter after each goroutine completes its work.
 			defer wg.Done()
 
-			// The consumer's work is pretty simple...  Write the directory path that was retrieved
+			// The consumer's work is pretty simple...  Write the directory msg that was retrieved
 			// from the channel to stdout.
-			fmt.Printf("R: %s\n", path)
-		}(path)
-		// The closure is only bound to that one variable, 'path'.  There is a very good
-		// chance that not adding 'path' as a parameter to the closure, will result in seeing
+			fmt.Printf("R: %s\n\tElapsed: %s\n", path.Payload(), path.Elapsed())
+		}(msg)
+		// The closure is only bound to that one variable, 'msg'.  There is a very good
+		// chance that not adding 'msg' as a parameter to the closure, will result in seeing
 		// the last element printed for every iteration instead of each value in sequence.
 		// This is due to the high probability that goroutines will execute after the loop.
 		//
-		// By adding 'path' as a parameter to the closure, 'path' is evaluated at each iteration
+		// By adding 'msg' as a parameter to the closure, 'msg' is evaluated at each iteration
 		// and placed on the stack for the goroutine, so each slice element is available
 		// to the goroutine when it is eventually executed.
 	}

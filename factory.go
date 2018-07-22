@@ -6,13 +6,13 @@ package main
 /*
 import (
 	"errors"
-	"github.com/abitofhelp/minipipeline/step/intake"
-	. "github.com/abitofhelp/minipipeline/step"
+	"github.com/abitofhelp/minipipeline/stage/intake"
+	. "github.com/abitofhelp/minipipeline/stage"
 )
 
-// Default step implementation to use.
+// Default stage implementation to use.
 const (
-	// Constant kDefaultName is the default step name to use.
+	// Constant kDefaultName is the default stage name to use.
 	defaultName = "intake"
 )
 
@@ -27,17 +27,17 @@ type Factory struct {
 	constructors map[string]func() IStep
 }
 
-// Method New creates an instance of the default kind of step.
+// Method New creates an instance of the default kind of stage.
 func (f *Factory) New() IStep {
 	ret, _ := f.Create(defaultName)
 	return ret
 }
 
-// Method Create returns an instance of a specific kind of step using its name.
+// Method Create returns an instance of a specific kind of stage using its name.
 func (f *Factory) Create(name string) (IStep, error) {
 	constructor, ok := f.constructors[name]
 	if !ok {
-		return nil, errors.New("step not found")
+		return nil, errors.New("stage not found")
 	}
 	return constructor(), nil
 }
@@ -56,7 +56,7 @@ func NewFactory() *Factory {
 	return instance
 }
 
-// Function init registers each kind of step that can exist in the pipeline.
+// Function init registers each kind of stage that can exist in the pipeline.
 func init() {
 	NewFactory().Register("intake", func() IStep { return intake.New() })
 }
