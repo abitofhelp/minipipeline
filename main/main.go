@@ -7,18 +7,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/abitofhelp/minipipeline/message"
 	"github.com/abitofhelp/minipipeline/pipeline"
-	"github.com/abitofhelp/minipipeline/stage/intake"
-	"sync"
 )
 
 // Function main is the entry point for the application and is responsible
 // for configuring its environment.
 func main() {
 
-	pl := pipeline.New()
+	pipe, err := pipeline.New()
+	fmt.Println(pipe, err)
 
+}
+
+/*
 	// Field wg is main's WaitGroup that is used to be able
 	// to detect when all of the goroutines that are launched
 	// have completed.
@@ -66,11 +67,13 @@ func main() {
 	// Wait here until the producer and consumer have completed their work,
 	// which will be signaled the channel being closed and by wg's internal
 	// goroutine counter being zero.
-	wg.Wait()
+	wg.Wait()*/
 
-	// Adios!
-	fmt.Println("All done!")
-}
+// Adios!
+//fmt.Println("All done!")
+//}
+
+/*
 
 // Function Consumer receives file system directory paths from the channel.
 // Parameter ch is a unidirectional channel from which directory paths are
@@ -107,3 +110,4 @@ func Consumer(ch <-chan message.Intake) {
 		// to the goroutine when it is eventually executed.
 	}
 }
+*/

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/abitofhelp/minipipeline/message"
 	"sync/atomic"
-	"time"
 )
 
 type Stage struct {
@@ -24,26 +23,15 @@ type Stage struct {
 	// sent through the send channel to the next stage in the pipeline.
 	sendCounter uint64
 
-	// Field stageError contains an error if the stage has failed while processing a message.
-	stageError error
-
-	// Field previous points to the previous stage in the pipeline or nil if there isn't one.
-	// It permits us to traverse backwards through the pipeline's stages.
-	//previous *IStage
-
-	// Field next points to the next stage in the pipeline or nil is there isn't one.
-	// It permits us to traverse forward through the pipeline's stages.
-	//next *IStage
-
 	// Field inputChannel is the previous stage's channel (OutputChannel) to this stage,
 	// or nil if there isn't a previous stage.
-	inputChannel <-chan message.IStage
+	inputChannel <-chan message.IMessage
 
 	// Field outputChannel is the InputChannel from the next stage, or nil if there isn't one.
-	outputChannel chan<- message.IStage
+	outputChannel chan<- message.IMessage
 }
 
-// Method Message() returns the kind of stage.
+// Method Stage() returns the kind of stage.
 func (s Stage) Stage() Stages {
 	return s.stage
 }
@@ -80,73 +68,54 @@ func (s *Stage) incReceiveCounter() {
 	atomic.AddUint64(&s.receiveCounter, 1)
 }
 
-// Method Message() returns an error if the stage has failed while processing a message;
-// otherwise nil.
-func (s Stage) StageError() error {
-	return s.stageError
+// Method InputChannel returns the input channel for this stage.
+func (s Stage) InputChannel() <-chan message.IMessage {
+	return s.inputChannel
 }
 
-// Method Previous returns the previous stage in the pipeline or nil if there isn't one.
-// It permits us to traverse backwards through the pipeline's stages.
-//func (s *Stage) Previous() *IStage {
-//	return s.previous
-//}
+// Method SetInputChannel sets the input channel for this stage.
+func (s *Stage) SetInputChannel(inputChannel <-chan message.IMessage) {
+	s.inputChannel = inputChannel
+}
 
-// Method Next returns the next stage in the pipeline or nil is there isn't one.
-// It permits us to traverse forward through the pipeline's stages.
-//func (s *Stage) Next() *IStage {
-//	return s.next
-//}
+// Method OutputChannel returns the output channel for this stage.
+func (s Stage) OutputChannel() chan<- message.IMessage {
+	return s.outputChannel
+}
 
-// Method InputChannel returns the previous stage's channel (OutputChannel) to this stage,
-//// or nil if there isn't a previous stage.
-//func (s *Stage) InputChannel() <-chan message.IStage {
-//	if s.Previous() != nil {
-//		return s.Previous().OutputChannel()
-//	}
-//
-//	return nil
-//}
-//
-//// Method OutputChannel returns the InputChannel from the next stage, or nil if there isn't one.
-//func (s *Stage) OutputChannel() chan<- message.IStage {
-//	if s.next != nil {
-//		//return s.Next().InputChannel()
-//	}
-//
-//	return nil
-//}
+// Method SetOutputChannel sets the output channel for this stage.
+func (s *Stage) SetOutputChannel(outputChannel chan<- message.IMessage) {
+	s.outputChannel = outputChannel
+}
 
-// Method Send sets sends a message through the send channel.
-func (s *Stage) Send(payload string) error {
-	fmt.Printf("F: %s\n", payload)
+// Method Send sends a message through the output channel.
+func (s *Stage) Send(message message.IMessage) {
+	fmt.Printf("OUT: %s: %s\n", s.stage.String(), message.Payload())
 
-	msg := message.NewStage(s.Stage(), payload, time.Now().UTC())
-	s.outputChannel <- msg
+	s.outputChannel <- message
 	s.incSendCounter()
-	return nil
 }
 
-// Method Execute walks the source directory paths, and adds a file system path for each
-// regular file that is found to the output channel.
-func (s *Stage) Execute() error {
-	// Todo: abstract method or use a closure?
-	return nil //i.loadFilePathsToSendChannel()
+// Method Receive receives a message from the input channel.
+func (s *Stage) Receive() message.IMessage {
+	message := <-s.inputChannel
+	s.incReceiveCounter()
+
+	fmt.Printf("IN: %s: %s\n", s.stage.String(), message.Payload())
+
+	return message
 }
 
 // Function New creates a new instance of a stage.
-func New(stage Stages, inputChannel <-chan message.IStage, outputChannel chan<- message.IStage) *Stage {
+func New(stage Stages, inputChannel <-chan message.IMessage, outputChannel chan<- message.IMessage) Stage {
 
 	// Create the first stage in the pipeline: IntakeStep.
-	step := &Stage{
+	step := Stage{
 		stage:          stage,
 		receiveCounter: 0,
 		sendCounter:    0,
-		stageError:     nil,
 		inputChannel:   inputChannel,
 		outputChannel:  outputChannel,
-		//	previous:       previous,
-		//next:           next,
 	}
 
 	return step

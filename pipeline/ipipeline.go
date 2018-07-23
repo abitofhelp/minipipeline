@@ -4,16 +4,23 @@
 // Package pipeline provides the ability to construct and run a pipeline.
 package pipeline
 
+import "github.com/abitofhelp/minipipeline/stage"
+
 // The type IPipeline is an interface consisting of each of the possible stages
 // in the pipeline.  These stages will be part of a fluent interface, so it is
 // a simple matter to change the order of the stages, remove some, or introduce
 // new ones.
 type IPipeline interface {
-	Intake()
-	Analysis() *IPipeline
-	Transformation() *IPipeline
-	Validation() *IPipeline
-	Persistence() *IPipeline
+	// Function FirstStage locates the first stage in the pipeline.
+	// Returns the (stage instance, nil) on success; Otherwise, (nil, error).
+	FirstStage() (stage.IStage, error)
 
-	Builder() *IPipeline
+	// Function LastStage locates the last stage in the pipeline.
+	// Returns the (stage instance, nil) on success; Otherwise, (nil, error).
+	LastStage() (stage.IStage, error)
+
+	// Function FindStage will locate a stage of interest in the pipeline.
+	// Parameter stageOfInterest is the kind of stage to seek in the pipeline.
+	// Returns (stage instance, nil) on success, otherwise (nil, error)
+	FindStage(stageOfInterest stage.Stages) (stage.IStage, error)
 }

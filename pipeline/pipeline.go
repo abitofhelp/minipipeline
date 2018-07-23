@@ -6,75 +6,82 @@ package pipeline
 
 import (
 	"container/list"
-	"github.com/abitofhelp/minipipeline/message"
+	"fmt"
 	"github.com/abitofhelp/minipipeline/stage"
 )
-
-type PipelineBuilder struct {
-	Pipeline
-}
-
-func (pb *PipelineBuilder) Intake(inputChannel <-chan message.IStage, outputChannel chan<- message.IStage) *PipelineBuilder {
-	// Construct an instance of the Intake stage.
-	stage := stage.New(stage.Intake, inputChannel, outputChannel)
-	pb.Pipeline.stages.PushFront(stage)
-	return pb
-}
-
-func (pb *PipelineBuilder) Analysis(inputChannel <-chan message.IStage, outputChannel chan<- message.IStage) *PipelineBuilder {
-	// Construct an instance of the Analysis stage.
-	stage := stage.New(stage.Analysis, inputChannel, outputChannel)
-	pb.Pipeline.stages.PushFront(stage)
-	return pb
-}
-
-func (pb *PipelineBuilder) Transformation(inputChannel <-chan message.IStage, outputChannel chan<- message.IStage) *PipelineBuilder {
-	// Construct an instance of the Transformation stage.
-	stage := stage.New(stage.Transformation, inputChannel, outputChannel)
-	pb.Pipeline.stages.PushFront(stage)
-	return pb
-}
-
-func (pb *PipelineBuilder) Validation(inputChannel <-chan message.IStage, outputChannel chan<- message.IStage) *PipelineBuilder {
-	// Construct an instance of the Validation stage.
-	stage := stage.New(stage.Validation, inputChannel, outputChannel)
-	pb.Pipeline.stages.PushFront(stage)
-	return pb
-}
-
-func (pb *PipelineBuilder) Delivery(inputChannel <-chan message.IStage, outputChannel chan<- message.IStage) *PipelineBuilder {
-	// Construct an instance of the Delivery stage.
-	stage := stage.New(stage.Delivery, inputChannel, outputChannel)
-	pb.Pipeline.stages.PushFront(stage)
-	return pb
-}
-
-func (pb *PipelineBuilder) Build() Pipeline {
-	return pb.Pipeline
-}
 
 // The type Pipeline implements the IPipeline interface and to make it possible
 // to easily construct and rearrange a pipeline using a fluent interface.  Basically,
 // it is going to be a bi-directional linked list.
 type Pipeline struct {
+	// Field stages is a list of the stages from the fluent interface.
+	// The list is in the order that will be used for the pipeline.
 	stages list.List
 }
 
+// Function FirstStage locates the first stage in the pipeline.
+// Returns the (stage instance, nil) on success; Otherwise, (nil, error).
+func (p Pipeline) FirstStage() (stage.IStage, error) {
+	e := p.stages.Front()
+
+	// Convert the list's node's value to IStage.
+	step, ok := e.Value.(stage.IStage)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert a list node value to type step.IStage: %v", e.Value)
+	}
+
+	return step, nil
+}
+
+// Function LastStage locates the last stage in the pipeline.
+// Returns the (stage instance, nil) on success; Otherwise, (nil, error).
+func (p Pipeline) LastStage() (stage.IStage, error) {
+	e := p.stages.Back()
+
+	// Convert the list's node's value to IStage.
+	step, ok := e.Value.(stage.IStage)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert a list node value to type step.IStage: %v", e.Value)
+	}
+
+	return step, nil
+}
+
+// Function FindStage will locate a stage of interest in the pipeline.
+// Parameter stageOfInterest is the kind of stage to seek in the pipeline.
+// Returns (stage instance, nil) on success, otherwise (nil, error)
+func (p Pipeline) FindStage(stageOfInterest stage.Stages) (stage.IStage, error) {
+
+	// Traverse the stages in the pipeline to find the one that has been requested.
+	for e := p.stages.Front(); e != nil; e = e.Next() {
+
+		// Convert the list's node's value to IStage.
+		step, ok := e.Value.(stage.IStage)
+		if !ok {
+			return nil, fmt.Errorf("failed to convert a list node value to type step.IStage: %v", e.Value)
+		}
+
+		if step.Stage() == stageOfInterest {
+			return step, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find a stage %s in the pipeline", stageOfInterest.String())
+}
+
 // Function New creates a new instance of a pipeline.
-func New() Pipeline {
-
-	intakeInput := make(<-chan message.IStage, 100)
-	intakeOutput := make(chan<- message.IStage, 100)
-
-	// Create the first stage in the pipeline: IntakeStep.
-	pb := &PipelineBuilder{}
-	pipeline := pb.
-		Intake(intakeInput, intakeOutput).
-		Analysis(nil, nil).
-		Transformation(nil, nil).
-		Validation(nil, nil).
-		Delivery(nil, nil).
+func New() (*Pipeline, error) {
+	// Use the Builder to create the pipeline using a fluent interface.
+	// The order of the stages is the same as in the pipeline.
+	// Build will take care of setting up the channels between the stages.
+	pb := &Builder{}
+	pipeline, err := pb.
+		Intake().
+		Analysis().
+		Transformation().
+		Validation().
+		Delivery().
 		Build()
 
-	return pipeline
+	return pipeline, err
 }

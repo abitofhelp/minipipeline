@@ -10,8 +10,8 @@ import (
 
 // Interface IStage defines the methods that all stages in a pipeline must implement.
 type IStage interface {
-	// Method Message returns a message that will be processed by this stage.
-	Message() message.IStage
+	// Method Stage() returns the kind of stage.
+	Stage() Stages
 
 	// Method ReceiveCounter returns the number of messages that have been
 	// received by this stage.
@@ -21,26 +21,23 @@ type IStage interface {
 	// sent through the send channel to the next stage in the pipeline.
 	SendCounter() uint64
 
-	// Method StageError returns an error if the stage has failed while processing a message.
-	StageError() error
+	// Method InputChannel returns the input channel for this stage.
+	InputChannel() <-chan message.IMessage
 
-	// Method Previous returns the previous stage in the pipeline or nil if there isn't one.
-	// It permits us to traverse backwards through the pipeline's stages.
-	//Previous() *IStage
+	// Method SetInputChannel sets the input channel for this stage.
+	SetInputChannel(inputChannel <-chan message.IMessage)
 
-	// Method Next returns the next stage in the pipeline or nil is there isn't one.
-	// It permits us to traverse forward through the pipeline's stages.
-	//Next() *IStage
+	// Method OutputChannel returns the output channel for this stage.
+	OutputChannel() chan<- message.IMessage
 
-	// Method InputChannel returns the previous stage's channel (OutputChannel) to this stage,
-	// or nil if there isn't a previous stage.
-	InputChannel() <-chan *message.IStage
+	// Method SetOutputChannel sets the output channel for this stage.
+	SetOutputChannel(outputChannel chan<- message.IMessage)
 
-	// Method OutputChannel returns the InputChannel from the next stage, or nil if there isn't one.
-	OutputChannel() chan<- *message.IStage
+	// Method Send sends a message through the output channel.
+	Send(message message.IMessage)
 
-	// Method Send sends a message through the send channel to the next stage in the pipeline.
-	Send(payload string)
+	// Method Receive receives a message from the input channel.
+	Receive() message.IMessage
 
 	// Method Execute performs whatever action is required in the stage.
 	Execute()

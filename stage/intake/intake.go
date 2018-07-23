@@ -5,6 +5,7 @@
 // passed along to the next stage in the pipeline.
 package intake
 
+/*
 import (
 	"fmt"
 	"github.com/abitofhelp/minipipeline/message"
@@ -199,3 +200,4 @@ func New(directories []string, prevChannel <-chan message.Intake, nextChannel ch
 
 	return intakeStep
 }
+*/
