@@ -17,13 +17,13 @@ const (
 )
 
 var (
-	// Variable instance is a singleton instance of the factory.
+	// Field instance is a singleton instance of the factory.
 	instance *Factory
 )
 
 // Type Factory provides for constructing concrete instances of IStep.
 type Factory struct {
-	// Variable constructors is a map of constructors for the concrete steps.
+	// Field constructors is a map of constructors for the concrete steps.
 	constructors map[string]func() IStep
 }
 

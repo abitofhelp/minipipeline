@@ -13,7 +13,7 @@ type Pipeline struct {
 	Analysis
 	Transformation
 	Validation
-	Persisted
+	Persistence
 }
 
 // Function NewPipeline creates a new, initialized instance.

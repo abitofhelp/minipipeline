@@ -8,6 +8,7 @@ package main
 import (
 	"fmt"
 	"github.com/abitofhelp/minipipeline/message"
+	"github.com/abitofhelp/minipipeline/pipeline"
 	"github.com/abitofhelp/minipipeline/stage/intake"
 	"sync"
 )
@@ -16,7 +17,9 @@ import (
 // for configuring its environment.
 func main() {
 
-	// Variable wg is main's WaitGroup that is used to be able
+	pl := pipeline.New()
+
+	// Field wg is main's WaitGroup that is used to be able
 	// to detect when all of the goroutines that are launched
 	// have completed.
 	var wg sync.WaitGroup
@@ -74,7 +77,7 @@ func main() {
 // retrieved.
 // It returns when all of the goroutines have completed processing the channel.
 func Consumer(ch <-chan message.Intake) {
-	// Variable wg is the consumer's WaitGroup, which detects when all of the
+	// Field wg is the consumer's WaitGroup, which detects when all of the
 	// goroutines that were launched have completed.
 	var wg sync.WaitGroup
 

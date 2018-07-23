@@ -8,11 +8,11 @@ import (
 	"github.com/abitofhelp/minipipeline/stage"
 )
 
-// Interface IStaged defines the methods that must be implemented for a
+// Interface IStage defines the methods that must be implemented for a
 // message flowing through a stage in the pipeline.
-type IStaged interface {
+type IStage interface {
 	IBasic
 
 	// Method Stage returns the stage in the pipeline that the message is related to.
-	Stage() stage.Stage
+	Stage() stage.Stages
 }

@@ -16,10 +16,6 @@ type Basic struct {
 	// can return a simple string, a base64 string, or even a JSON object.
 	payload string
 
-	// The Time in UTC when the message arrived in a stage of the pipeline
-	//// stage in the pipeline.
-	arrivedUtc time.Time
-
 	// The Time in UTC when the message departed a stage in the pipeline.
 	departedUtc time.Time
 }
@@ -30,45 +26,10 @@ func (b Basic) Payload() string {
 	return b.payload
 }
 
-// Method SetPayload sets the payload in the instance.
-func (b *Basic) SetPayload(payload string) {
-	b.payload = payload
-}
-
-// Method ArrivedUtc returns the Time in UTC when the message arrived in a
-// stage of the pipeline.
-func (b Basic) ArrivedUtc() time.Time {
-	return b.arrivedUtc
-}
-
-// Method SetArrivedUtc sets the arrived in UTC in the instance.
-func (b *Basic) SetArrivedUtc(arrivedUtc time.Time) {
-	// Todo: Add validation that it is in UTC.
-	b.arrivedUtc = arrivedUtc
-}
-
 // Method DepartedUtc returns the Time in UTC when the message departed a
 // stage in the pipeline.
 func (b Basic) DepartedUtc() time.Time {
 	return b.departedUtc
-}
-
-// Method SetDepartedUtc sets the departed in UTC in the instance.
-func (b *Basic) SetDepartedUtc(departedUtc time.Time) {
-	// Todo: Add validation that it is in UTC.
-	b.departedUtc = departedUtc
-}
-
-// Function Elapsed determines the time that a message spent in a stage of a pipeline.
-func (b Basic) Elapsed() time.Duration {
-	return b.departedUtc.Sub(b.arrivedUtc)
-}
-
-// Function NewBasic creates a new, initialized message.
-// Parameter payload is the text to carry through the pipeline.
-// Returns nil on error.
-func NewBasic(payload string) *Basic {
-	return NewBasicDetails(payload, time.Time{}, time.Time{})
 }
 
 // Function NewBasic creates a new, initialized message.
@@ -76,11 +37,10 @@ func NewBasic(payload string) *Basic {
 // Parameter arrivedUtc is the time in UTC when the message arrived in the stage.
 // Parameter departedUtc is the time in UTC when the message departed from the stage.
 // Returns nil on error.
-func NewBasicDetails(payload string, arrivedUtc time.Time, departedUtc time.Time) *Basic {
+func NewBasic(payload string, departedUtc time.Time) *Basic {
 
 	msg := &Basic{
 		payload:     payload,
-		arrivedUtc:  arrivedUtc,
 		departedUtc: departedUtc,
 	}
 

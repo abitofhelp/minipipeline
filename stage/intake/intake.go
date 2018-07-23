@@ -7,11 +7,9 @@ package intake
 
 import (
 	"fmt"
+	"github.com/abitofhelp/minipipeline/message"
 	"github.com/karrick/godirwalk"
 	"os"
-	//. "path/filepath"
-	"github.com/abitofhelp/minipipeline/message"
-	msg "github.com/abitofhelp/minipipeline/message"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -47,9 +45,9 @@ type Intake struct {
 	// sent through send channel.
 	sendCounter uint64
 
-	// Field sendChannel contains the messages being passed along to
-	// the next stage in the pipeline.
-	sendChannel chan<- message.Intake
+	prevChannel <-chan message.Intake
+
+	nextChannel chan<- message.IStaged
 }
 
 // Method Name returns the name of the stage.
@@ -127,7 +125,7 @@ func (i *Intake) Execute() error {
 
 func (i *Intake) loadFilePathsToSendChannel() error {
 
-	// Variable wg is main's WaitGroup, which detects when all of the
+	// Field wg is main's WaitGroup, which detects when all of the
 	// goroutines that were launched have completed.
 	var wg sync.WaitGroup
 
@@ -191,13 +189,13 @@ func (i *Intake) loadFilePathsToSendChannel() error {
 //}
 
 // Function New creates a new instance of the Intake stage.
-func New(directories []string, sendChannel chan<- msg.Intake) *Intake {
+func New(directories []string, prevChannel <-chan message.Intake, nextChannel chan<- message.IStaged) *Intake {
 
 	// Create the message for this stage in the pipeline...
 	message := message.NewIntake("")
 
 	// Create the first stage in the pipeline: IntakeStep.
-	intakeStep := &Intake{name: KStepName, directories: directories, message: *message, receiveCounter: 0, sendCounter: 0, sendChannel: sendChannel}
+	intakeStep := &Intake{name: KStepName, directories: directories, message: *message, receiveCounter: 0, sendCounter: 0, prevChannel: prevChannel, nextChannel: nextChannel}
 
 	return intakeStep
 }
