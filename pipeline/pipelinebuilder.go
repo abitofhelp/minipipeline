@@ -64,9 +64,8 @@ func (pb *Builder) Build() (*Pipeline, error) {
 	// Traverse the stages from beginning to end, and
 	// configure the channels for each stage.
 	for e := pb.stages.Front(); e != nil; e = e.Next() {
-
 		// Convert the list's node's value to IStage.
-		step, ok := e.Value.(stage.Stage)
+		step, ok := e.Value.(*stage.Stage)
 		if !ok {
 			return nil, fmt.Errorf("failed to convert a list node value to type step.IStage: %v", e.Value)
 		}
@@ -88,7 +87,7 @@ func (pb *Builder) Build() (*Pipeline, error) {
 		next := e.Next()
 		if next != nil {
 			// Convert the next list's node's value to IStage.
-			step, ok = next.Value.(stage.Stage)
+			step, ok = next.Value.(*stage.Stage)
 			if !ok {
 				return nil, fmt.Errorf("failed to convert a list node value to type step.IStage: %v", next.Value)
 			}

@@ -56,15 +56,13 @@ func (b Message) Elapsed() time.Duration {
 
 // Function NewBasic creates a new, initialized message.
 // Parameter payload is the text to carry through the pipeline.
-// Parameter enteredUtc is the Time in UTC when the message entered the pipeline.
-// Parameter exitedUtc is the Time in UTC when the message exited the pipeline.
 // Returns nil on error.
-func New(payload string, enteredUtc time.Time, exitedUtc time.Time) *Message {
+func New(payload string) *Message {
 
 	msg := &Message{
 		payload:    payload,
-		enteredUtc: enteredUtc,
-		exitedUtc:  exitedUtc,
+		enteredUtc: time.Time{},
+		exitedUtc:  time.Time{},
 	}
 
 	return msg

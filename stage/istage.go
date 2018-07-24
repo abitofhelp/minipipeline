@@ -22,22 +22,22 @@ type IStage interface {
 	SendCounter() uint64
 
 	// Method InputChannel returns the input channel for this stage.
-	InputChannel() <-chan message.IMessage
+	InputChannel() chan message.IMessage
 
 	// Method SetInputChannel sets the input channel for this stage.
-	SetInputChannel(inputChannel <-chan message.IMessage)
+	SetInputChannel(inputChannel chan message.IMessage)
 
 	// Method OutputChannel returns the output channel for this stage.
-	OutputChannel() chan<- message.IMessage
+	OutputChannel() chan message.IMessage
 
 	// Method SetOutputChannel sets the output channel for this stage.
-	SetOutputChannel(outputChannel chan<- message.IMessage)
+	SetOutputChannel(outputChannel chan message.IMessage)
 
 	// Method Send sends a message through the output channel.
 	Send(message message.IMessage)
 
 	// Method Receive receives a message from the input channel.
-	Receive() message.IMessage
+	Receive()
 
 	// Method Execute performs whatever action is required in the stage.
 	Execute()

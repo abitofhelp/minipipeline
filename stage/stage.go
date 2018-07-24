@@ -7,6 +7,7 @@ package stage
 import (
 	"fmt"
 	"github.com/abitofhelp/minipipeline/message"
+	"sync"
 	"sync/atomic"
 )
 
@@ -25,10 +26,10 @@ type Stage struct {
 
 	// Field inputChannel is the previous stage's channel (OutputChannel) to this stage,
 	// or nil if there isn't a previous stage.
-	inputChannel <-chan message.IMessage
+	inputChannel chan message.IMessage
 
 	// Field outputChannel is the InputChannel from the next stage, or nil if there isn't one.
-	outputChannel chan<- message.IMessage
+	outputChannel chan message.IMessage
 }
 
 // Method Stage() returns the kind of stage.
@@ -69,22 +70,22 @@ func (s *Stage) incReceiveCounter() {
 }
 
 // Method InputChannel returns the input channel for this stage.
-func (s Stage) InputChannel() <-chan message.IMessage {
+func (s Stage) InputChannel() chan message.IMessage {
 	return s.inputChannel
 }
 
 // Method SetInputChannel sets the input channel for this stage.
-func (s *Stage) SetInputChannel(inputChannel <-chan message.IMessage) {
+func (s *Stage) SetInputChannel(inputChannel chan message.IMessage) {
 	s.inputChannel = inputChannel
 }
 
 // Method OutputChannel returns the output channel for this stage.
-func (s Stage) OutputChannel() chan<- message.IMessage {
+func (s Stage) OutputChannel() chan message.IMessage {
 	return s.outputChannel
 }
 
 // Method SetOutputChannel sets the output channel for this stage.
-func (s *Stage) SetOutputChannel(outputChannel chan<- message.IMessage) {
+func (s *Stage) SetOutputChannel(outputChannel chan message.IMessage) {
 	s.outputChannel = outputChannel
 }
 
@@ -97,20 +98,48 @@ func (s *Stage) Send(message message.IMessage) {
 }
 
 // Method Receive receives a message from the input channel.
-func (s *Stage) Receive() message.IMessage {
-	message := <-s.inputChannel
-	s.incReceiveCounter()
+func (s *Stage) Receive() {
 
-	fmt.Printf("IN: %s: %s\n", s.stage.String(), message.Payload())
+	// Field wg is the consumer's WaitGroup, which detects when all of the
+	// goroutines that were launched have completed.
+	var wg sync.WaitGroup
 
-	return message
+	// The consumer's wait group will block at wg.Wait(), which will be invoked just
+	// before exiting from the function.  It will block until wg's internal counter is zero,
+	// which happens when all of the goroutines that were launched have completed.
+	defer wg.Wait()
+
+	for msg := range s.InputChannel() {
+		// Increment the consumer's WaitGroup counter for each goroutine that is launched.
+		wg.Add(1)
+		go func(path message.IMessage) {
+			// Decrement the consumers's WaitGroup counter after each goroutine completes its work.
+			defer wg.Done()
+
+			s.incReceiveCounter()
+			fmt.Printf("IN: %s: %s\n", s.stage.String(), msg.Payload())
+
+			// Todo
+			// For now, we simply pass the message along to the next stage...
+			s.Send(msg)
+
+		}(msg)
+		// The closure is only bound to that one variable, 'msg'.  There is a very good
+		// chance that not adding 'msg' as a parameter to the closure, will result in seeing
+		// the last element printed for every iteration instead of each value in sequence.
+		// This is due to the high probability that goroutines will execute after the loop.
+		//
+		// By adding 'msg' as a parameter to the closure, 'msg' is evaluated at each iteration
+		// and placed on the stack for the goroutine, so each slice element is available
+		// to the goroutine when it is eventually executed.
+	}
 }
 
 // Function New creates a new instance of a stage.
-func New(stage Stages, inputChannel <-chan message.IMessage, outputChannel chan<- message.IMessage) Stage {
+func New(stage Stages, inputChannel chan message.IMessage, outputChannel chan message.IMessage) *Stage {
 
 	// Create the first stage in the pipeline: IntakeStep.
-	step := Stage{
+	step := &Stage{
 		stage:          stage,
 		receiveCounter: 0,
 		sendCounter:    0,

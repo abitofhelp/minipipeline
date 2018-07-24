@@ -21,11 +21,11 @@ type Pipeline struct {
 
 // Function FirstStage locates the first stage in the pipeline.
 // Returns the (stage instance, nil) on success; Otherwise, (nil, error).
-func (p Pipeline) FirstStage() (stage.IStage, error) {
+func (p Pipeline) FirstStage() (first *stage.Stage, err error) {
 	e := p.stages.Front()
 
 	// Convert the list's node's value to IStage.
-	step, ok := e.Value.(stage.IStage)
+	step, ok := e.Value.(*stage.Stage)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert a list node value to type step.IStage: %v", e.Value)
 	}
@@ -35,11 +35,11 @@ func (p Pipeline) FirstStage() (stage.IStage, error) {
 
 // Function LastStage locates the last stage in the pipeline.
 // Returns the (stage instance, nil) on success; Otherwise, (nil, error).
-func (p Pipeline) LastStage() (stage.IStage, error) {
+func (p Pipeline) LastStage() (last *stage.Stage, err error) {
 	e := p.stages.Back()
 
 	// Convert the list's node's value to IStage.
-	step, ok := e.Value.(stage.IStage)
+	step, ok := e.Value.(*stage.Stage)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert a list node value to type step.IStage: %v", e.Value)
 	}
@@ -50,13 +50,13 @@ func (p Pipeline) LastStage() (stage.IStage, error) {
 // Function FindStage will locate a stage of interest in the pipeline.
 // Parameter stageOfInterest is the kind of stage to seek in the pipeline.
 // Returns (stage instance, nil) on success, otherwise (nil, error)
-func (p Pipeline) FindStage(stageOfInterest stage.Stages) (stage.IStage, error) {
+func (p Pipeline) FindStage(stageOfInterest stage.Stages) (found *stage.Stage, err error) {
 
 	// Traverse the stages in the pipeline to find the one that has been requested.
 	for e := p.stages.Front(); e != nil; e = e.Next() {
 
 		// Convert the list's node's value to IStage.
-		step, ok := e.Value.(stage.IStage)
+		step, ok := e.Value.(*stage.Stage)
 		if !ok {
 			return nil, fmt.Errorf("failed to convert a list node value to type step.IStage: %v", e.Value)
 		}

@@ -7,107 +7,120 @@ package main
 
 import (
 	"fmt"
+	"github.com/abitofhelp/minipipeline/message"
 	"github.com/abitofhelp/minipipeline/pipeline"
+	"os"
+	"sync"
 )
 
 // Function main is the entry point for the application and is responsible
 // for configuring its environment.
 func main() {
 
-	pipe, err := pipeline.New()
-	fmt.Println(pipe, err)
-
-}
-
-/*
 	// Field wg is main's WaitGroup that is used to be able
 	// to detect when all of the goroutines that are launched
 	// have completed.
 	var wg sync.WaitGroup
 
-	// Create the channel for sending to the next stage.
-	intakeSendChannel := make(chan message.Intake, intake.KSendChannelSize)
+	pipeline, _ := pipeline.New()
 
-	// Increment the producer's WaitGroup counter for the goroutine
-	// launching the Consumer().
+	var enter, err = pipeline.FirstStage()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+		os.Exit(-1)
+	}
+
+	//	paths := []string{"/tmp", "/home/mjgardner/Downloads"}
+
 	wg.Add(1)
-	// Launch the goroutine, which will block until the producer
-	// sends file system directory paths into the channel.
 	go func() {
-		// Decrement the consumer's WaitGroup counter just before the goroutine exits.
-		defer wg.Done()
-		Consumer(intakeSendChannel)
-	}()
-
-	paths := []string{"/tmp", "/home/mjgardner/Downloads"}
-
-	intakeStep := intake.New(paths, intakeSendChannel)
-
-	// Increment the producer's WaitGroup counter for the goroutine
-	// launching the Producer().
-	wg.Add(1)
-	// Launch the goroutine, which will send file system directory
-	// paths into the channel.
-	go func() {
-		// Decrement the producer's WaitGroup counter just before the goroutine exits.
+		// Decrement the consumers's WaitGroup counter after each goroutine completes its work.
 		defer wg.Done()
 
-		// The consumer is running in parallel to the producer.  Function main() will wait for
-		// the consumer and producer goroutines to complete at its wg.Wait().  It is important to
-		// know that if the producer does not close the channel, then the consumer will block
-		// and wg.Wait() will never be reached in Main().  Closing the channel signals the consumer
-		// that production has completed.  When the consumer empties the channel, wg.Wait() in
-		// Main() will complete.  The channel will be closed just before the goroutine exits.
-		defer close(intakeSendChannel)
+		enter.InputChannel() <- message.New("/home/mjgardner/Downloads")
 
-		// Load the source directories into the channel so they can be consumed.
-		intakeStep.Execute()
+		close(enter.InputChannel())
 	}()
+
+	//
+	//// Increment the producer's WaitGroup counter for the goroutine
+	//// launching the Consumer().
+	//wg.Add(1)
+	//// Launch the goroutine, which will block until the producer
+	//// sends file system directory paths into the channel.
+	//go func() {
+	//	// Decrement the consumer's WaitGroup counter just before the goroutine exits.
+	//	defer wg.Done()
+	//	enter.Receive()
+	//}()
+	//
+	//// Increment the producer's WaitGroup counter for the goroutine
+	//// launching the Producer().
+	//wg.Add(1)
+	//// Launch the goroutine, which will send file system directory
+	//// paths into the channel.
+	//go func() {
+	//	// Decrement the producer's WaitGroup counter just before the goroutine exits.
+	//	defer wg.Done()
+	//
+	//	// The consumer is running in parallel to the producer.  Function main() will wait for
+	//	// the consumer and producer goroutines to complete at its wg.Wait().  It is important to
+	//	// know that if the producer does not close the channel, then the consumer will block
+	//	// and wg.Wait() will never be reached in Main().  Closing the channel signals the consumer
+	//	// that production has completed.  When the consumer empties the channel, wg.Wait() in
+	//	// Main() will complete.  The channel will be closed just before the goroutine exits.
+	//	defer close(enter.OutputChannel())
+	//
+	//	// Load the source directories into the channel so they can be consumed.
+	//	//intakeStep.Execute()
+	//	//	paths := []string{"/tmp", "/home/mjgardner/Downloads"}
+	//	msg := message.New("/home/mjgardner/Downloads")
+	//
+	//	// Send the message into the pipeline...
+	//	enter.Send(msg)
+	//}()
 
 	// Wait here until the producer and consumer have completed their work,
 	// which will be signaled the channel being closed and by wg's internal
 	// goroutine counter being zero.
-	wg.Wait()*/
+	wg.Wait()
 
-// Adios!
-//fmt.Println("All done!")
-//}
-
-/*
+	// Adios!
+	fmt.Println("All done!")
+}
 
 // Function Consumer receives file system directory paths from the channel.
 // Parameter ch is a unidirectional channel from which directory paths are
 // retrieved.
 // It returns when all of the goroutines have completed processing the channel.
-func Consumer(ch <-chan message.Intake) {
-	// Field wg is the consumer's WaitGroup, which detects when all of the
-	// goroutines that were launched have completed.
-	var wg sync.WaitGroup
-
-	// The consumer's wait group will block at wg.Wait(), which will be invoked just
-	// before exiting from the function.  It will block until wg's internal counter is zero,
-	// which happens when all of the goroutines that were launched have completed.
-	defer wg.Wait()
-
-	for msg := range ch {
-		// Increment the consumer's WaitGroup counter for each goroutine that is launched.
-		wg.Add(1)
-		go func(path message.Intake) {
-			// Decrement the consumers's WaitGroup counter after each goroutine completes its work.
-			defer wg.Done()
-
-			// The consumer's work is pretty simple...  Write the directory msg that was retrieved
-			// from the channel to stdout.
-			fmt.Printf("R: %s\n\tElapsed: %s\n", path.Payload(), path.Elapsed())
-		}(msg)
-		// The closure is only bound to that one variable, 'msg'.  There is a very good
-		// chance that not adding 'msg' as a parameter to the closure, will result in seeing
-		// the last element printed for every iteration instead of each value in sequence.
-		// This is due to the high probability that goroutines will execute after the loop.
-		//
-		// By adding 'msg' as a parameter to the closure, 'msg' is evaluated at each iteration
-		// and placed on the stack for the goroutine, so each slice element is available
-		// to the goroutine when it is eventually executed.
-	}
-}
-*/
+//func Consumer(ch chan message.IMessage ) {
+//	// Field wg is the consumer's WaitGroup, which detects when all of the
+//	// goroutines that were launched have completed.
+//	var wg sync.WaitGroup
+//
+//	// The consumer's wait group will block at wg.Wait(), which will be invoked just
+//	// before exiting from the function.  It will block until wg's internal counter is zero,
+//	// which happens when all of the goroutines that were launched have completed.
+//	defer wg.Wait()
+//
+//	for msg := range ch {
+//		// Increment the consumer's WaitGroup counter for each goroutine that is launched.
+//		wg.Add(1)
+//		go func(path message.IMessage) {
+//			// Decrement the consumers's WaitGroup counter after each goroutine completes its work.
+//			defer wg.Done()
+//
+//			// The consumer's work is pretty simple...  Write the directory msg that was retrieved
+//			// from the channel to stdout.
+//			fmt.Printf("R: %s\n\tElapsed: %s\n", path.Payload(), path.Elapsed())
+//		}(msg)
+//		// The closure is only bound to that one variable, 'msg'.  There is a very good
+//		// chance that not adding 'msg' as a parameter to the closure, will result in seeing
+//		// the last element printed for every iteration instead of each value in sequence.
+//		// This is due to the high probability that goroutines will execute after the loop.
+//		//
+//		// By adding 'msg' as a parameter to the closure, 'msg' is evaluated at each iteration
+//		// and placed on the stack for the goroutine, so each slice element is available
+//		// to the goroutine when it is eventually executed.
+//	}
+//}

@@ -13,14 +13,14 @@ import "github.com/abitofhelp/minipipeline/stage"
 type IPipeline interface {
 	// Function FirstStage locates the first stage in the pipeline.
 	// Returns the (stage instance, nil) on success; Otherwise, (nil, error).
-	FirstStage() (stage.IStage, error)
+	FirstStage() (first *stage.Stage, err error)
 
 	// Function LastStage locates the last stage in the pipeline.
 	// Returns the (stage instance, nil) on success; Otherwise, (nil, error).
-	LastStage() (stage.IStage, error)
+	LastStage() (last *stage.Stage, err error)
 
 	// Function FindStage will locate a stage of interest in the pipeline.
 	// Parameter stageOfInterest is the kind of stage to seek in the pipeline.
 	// Returns (stage instance, nil) on success, otherwise (nil, error)
-	FindStage(stageOfInterest stage.Stages) (stage.IStage, error)
+	FindStage(stageOfInterest stage.Stages) (found *stage.Stage, err error)
 }
